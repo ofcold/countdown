@@ -22,48 +22,52 @@ Typescript Countdown component for Vue 3.
 </template>
 
 <script>
-export default {
-	data() {
+import {defineComponent, ref} from 'vue'
+export default defineComponent({
+	setup() {
 		const now = new Date();
-		const newYear = new Date(now.getFullYear() + 1, 0, 1);
+		const newYear = ref(new Date(now.getFullYear() + 1, 0, 1));
 
 		return {
 			time: newYear - now,
 		};
-	},
-};
+	}
+})
 </script>
 
 ```
-
 
 ## Countdown on demand
 
 ```vue
 
 <template>
-	<button type="button" :disabled="counting" @click="startCountdown">
+	<button type="button" class="btn btn-primary" :disabled="counting" @click="startCountdown">
 		<countdown v-if="counting" :time="60000" @end="onCountdownEnd" v-slot="{ totalSeconds }">Fetch again {{ totalSeconds }} seconds later</countdown>
 		<span v-else>Fetch Verification Code</span>
 	</button>
 </template>
 
 <script>
-export default {
-	data() {
+import {ref, defineComponent} from 'vue'
+export default defineComponent({
+	setup() {
+		const counting = ref(false)
+		function startCountdown() {
+			counting = true
+		}
+		function onCountdownEnd() {
+			counting = false
+		}
+
 		return {
-			counting: false,
-		};
-	},
-	methods: {
-		startCountdown: function () {
-			this.counting = true;
-		},
-		onCountdownEnd: function () {
-			this.counting = false;
-		},
-	},
-};
+			counting,
+			startCountdown,
+			onCountdownEnd
+		}
+	}
+})
 </script>
 
 ```
+
