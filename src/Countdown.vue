@@ -42,42 +42,32 @@ interface CountdownInterface {
 export default defineComponent({
 	name: 'countdown',
 	props: {
-		/**
-		 * Starts the countdown automatically when initialized.
-		 */
+		// Starts the countdown automatically when initialized.
 		autoStart: {
 			type: Boolean,
 			default: true,
 		},
 
-		/**
-		 * Emits the countdown events.
-		 */
+		// Emits the countdown events.
 		emitEvents: {
 			type: Boolean,
 			default: true,
 		},
 
-		/**
-		 * The interval time (in milliseconds) of the countdown progress.
-		 */
+		// The interval time (in milliseconds) of the countdown progress.
 		interval: {
 			type: Number,
 			default: 1000,
 			validator: (value: number) => value >= 0,
 		},
 
-		/**
-		 * Generate the current time of a specific time zone.
-		 */
+		// Generate the current time of a specific time zone.
 		now: {
 			type: Function,
 			default: () => Date.now(),
 		},
 
-		/**
-		 * The time (in milliseconds) to count down from.
-		 */
+		// The time (in milliseconds) to count down from.
 		time: {
 			type: Number,
 			default: 0,
@@ -85,7 +75,7 @@ export default defineComponent({
 		},
 	},
 
-	setup(props: Object, {emit}) {
+	setup({autoStart, emitEvents, interval, now, time }, {emit}) {
 
 		const data = reactive<CountdownInterface>({
 			counting: false,
@@ -110,10 +100,10 @@ export default defineComponent({
 		const totalSeconds = computed((): number => Math.floor(data.totalMilliseconds / MILLISECONDS_SECOND));
 
 		watchEffect(() => {
-			data.totalMilliseconds = props.time;
-			data.endTime = props.now() + props.time;
+			data.totalMilliseconds = time;
+			data.endTime = now() + time;
 
-			if (props.autoStart) {
+			if (autoStart) {
 				start();
 			}
 		});
@@ -141,7 +131,7 @@ export default defineComponent({
 
 			data.counting = true;
 
-			if (props.emitEvents) {
+			if (emitEvents) {
 				// Countdown start event.
 				emit('start');
 			}
@@ -161,34 +151,34 @@ export default defineComponent({
 				return;
 			}
 
-			const delay = Math.min(data.totalMilliseconds, props.interval);
+			const delay = Math.min(data.totalMilliseconds, interval);
 
 			if (delay > 0) {
 				let init: number;
 				let prev: number;
-				const step = (now: number) => {
+				const step = (_now: number) => {
 					if (!init) {
-						init = now;
+						init = _now;
 					}
 
 					if (!prev) {
-						prev = now;
+						prev = _now;
 					}
 
-					const range = now - init;
+					const range = _now - init;
 
 					if (
 						range >= delay
 
-						// Avoid losing time about one second per minute (now - prev ≈ 16ms) (#43)
-						|| range + ((now - prev) / 2) >= delay
+						// Avoid losing time about one second per minute (_now - prev ≈ 16ms) (#43)
+						|| range + ((_now - prev) / 2) >= delay
 					) {
 						progress();
 					} else {
 						data.requestId = requestAnimationFrame(step);
 					}
 
-					prev = now;
+					prev = _now;
 				};
 
 				data.requestId = requestAnimationFrame(step);
@@ -214,13 +204,13 @@ export default defineComponent({
 		 * @emits Countdown#progress
 		 */
 		function progress () {
-			if (!data.counting) {
+			if (! data.counting) {
 				return;
 			}
 
-			data.totalMilliseconds -= props.interval;
+			data.totalMilliseconds -= interval;
 
-			if (props.emitEvents && data.totalMilliseconds > 0) {
+			if (emitEvents && data.totalMilliseconds > 0) {
 				// Countdown progress event.
 				emit('progress', {
 					days: days,
@@ -254,7 +244,7 @@ export default defineComponent({
 			pause();
 			data.counting = false;
 
-			if (props.emitEvents) {
+			if (emitEvents) {
 				// Countdown abort event.
 				emit('abort');
 			}
@@ -268,15 +258,16 @@ export default defineComponent({
 		 * @emits Countdown#end
 		 */
 		function end() {
-			if (!data.counting) {
+			if (! data.counting) {
 				return;
 			}
 
 			pause();
+
 			data.totalMilliseconds = 0;
 			data.counting = false;
 
-			if (props.emitEvents) {
+			if (emitEvents) {
 				// Countdown end event.
 				emit('end');
 			}
@@ -289,7 +280,7 @@ export default defineComponent({
 		 */
 		function update() {
 			if (data.counting) {
-				data.totalMilliseconds = Math.max(0, data.endTime - props.now());
+				data.totalMilliseconds = Math.max(0, data.endTime - now());
 			}
 		}
 
